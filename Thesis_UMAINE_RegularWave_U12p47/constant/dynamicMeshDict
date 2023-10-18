@@ -1,0 +1,101 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      dynamicMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dynamicFvMesh dynamicMotionSolverFvMesh;
+
+motionSolverLibs 
+(
+  "libfvMotionSolvers.so"
+  "libnewSixDoFRigidBodyMotion.so"
+);
+solver sixDoFRigidBodyMotion;
+diffusivity     quadratic inverseDistance ( floatingObject );
+
+sixDoFRigidBodyMotionCoeffs
+{
+
+    patches         (floatingObject);
+    innerDistance   1.5;
+    outerDistance   50.0;
+
+    // Original CoM = (0.181 0 -2.1)
+    centreOfMass    (0.2 0 -14.40);
+
+    mass         18417418.20 ;
+    nIter		8;
+    // Cuboid moment of inertia about the centre of mass
+    //momentOfInertia (1.2507e10 1.2507e10 2.3667e10);
+    momentOfInertia (1.2507e10 2.2507e10 2.3667e10);
+    report          on;
+    accelerationRelaxation 0.7;
+    accelerationDamping    1.0;
+
+    solver
+    {
+        type Newmark;
+    }
+
+    constraints
+    {
+
+       /* pitchOnly
+        {
+         sixDoFRigidBodyMotionConstraint   axis;
+         axis                              (0.0 0.0 1.0);
+         }
+
+       heaveOnly
+       {
+         sixDoFRigidBodyMotionConstraint   line;
+         direction                         (0.0 0.0 1.0);
+       } */
+        
+    }
+
+    restraints
+    {
+    
+      turbineLoadFF // Restraint name , must be unique
+      {
+        sixDoFRigidBodyMotionRestraint turbineAL; // Restraint type
+      }
+      
+      umbilical
+      {
+      		sixDoFRigidBodyMotionRestraint linearSpring;
+      		anchor		(0 0 -200 ) ;
+      		refAttachmentPt	(0 0 0 ) ;
+      		stiffness		6.22e4 ;
+      		damping		0 ;
+      		restLength		200 ;
+      	}
+      		
+      		
+      
+      moorDynR2
+	{
+		sixDoFRigidBodyMotionRestraint moorDynR2;
+		inputFile                      "Mooring/lines_v2.txt";
+		writeMooringVTK                false;
+	}
+
+      
+
+    }
+}
+
+
+// ************************************************************************* //

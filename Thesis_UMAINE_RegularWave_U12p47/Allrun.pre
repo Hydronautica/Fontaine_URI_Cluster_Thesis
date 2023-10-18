@@ -1,0 +1,32 @@
+#!/bin/sh
+cd "${0%/*}" || exit                                # Run from this directory
+. ${WM_PROJECT_DIR:?}/bin/tools/RunFunctions        # Tutorial run functions
+#------------------------------------------------------------------------------
+
+# Create background mesh
+runApplication blockMesh
+
+#transformPoints -rotate-angle '((1 0 0) 90)'
+
+runApplication surfaceFeatureExtract
+
+runApplication snappyHexMesh -overwrite
+
+cp -r 0.org 0 
+
+runApplication waveGaugesNProbes
+
+runApplication topoSet
+
+# Compute the wave parameters
+runApplication setWaveParameters
+
+# Define relaxation zones (only needed if you want to visualize the resulting layout)
+runApplication relaxationZoneLayout
+
+# Set the wave field
+runApplication setWaveField
+
+# Set air velocity according to freestream conditions
+FOAM_SIGFPE=false runApplication setExprFields
+#------------------------------------------------------------------------------
